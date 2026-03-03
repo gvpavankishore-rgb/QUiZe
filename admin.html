@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Access</title>
+<style>
+body {
+    margin:0; font-family: 'Segoe UI', sans-serif;
+    height:100vh; display:flex; justify-content:center; align-items:center;
+    background:#f0f4ff;
+}
+.container{
+    background:white; padding:30px; border-radius:20px; box-shadow:0 20px 40px rgba(0,0,0,0.15);
+    width:400px; text-align:center;
+}
+input[type=text]{ 
+    padding:12px; width:80%; margin-bottom:10px; border-radius:8px; border:1px solid #ccc; 
+    text-align:center; font-size:18px;
+}
+button{ 
+    padding:12px 20px; border:none; border-radius:8px; background:#667eea; color:white; font-weight:bold; cursor:pointer; transition:0.3s; 
+}
+button:hover{ transform:scale(1.05);}
+#generatedCode{ margin:20px 0; font-weight:bold; color:green; font-size:22px; letter-spacing:4px; }
+#status{ margin-top:10px; font-weight:bold; color:red; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Admin Access</h2>
+    <div id="generatedCode"></div>
+    <input type="text" id="codeInput" placeholder="Enter  code" maxlength="4">
+    <button onclick="checkCode()">Submit</button>
+    <div id="status"></div>
+</div>
+
+<script>
+// 🔐 Variables
+let adminCode = "";
+const CODE_INTERVAL = 2 * 60 * 1000; // 2 minutes
+
+// 🔹 Load or generate code
+function initCode(){
+    const stored = JSON.parse(localStorage.getItem("adminCodeData"));
+    const now = Date.now();
+
+    if(stored && stored.code && stored.timestamp){
+        // Only regenerate if user came back after 2 mins
+        if(now - stored.timestamp >= CODE_INTERVAL){
+            generateNewCode();
+        } else {
+            adminCode = stored.code;
+            document.getElementById("generatedCode").innerText = `Code: ${adminCode}`;
+        }
+    } else {
+        generateNewCode();
+    }
+}
+
+// 🔹 Generate new code
+function generateNewCode(){
+    adminCode = Math.floor(1000 + Math.random() * 9000).toString();
+    document.getElementById("generatedCode").innerText = `Code: ${adminCode}`;
+    localStorage.setItem("adminCodeData", JSON.stringify({ code: adminCode, timestamp: Date.now() }));
+}
+
+// 🔹 Restrict input to 4 digits
+const codeInput = document.getElementById("codeInput");
+codeInput.addEventListener("input", function(){
+    this.value = this.value.replace(/\D/g,'');
+    if(this.value.length > 4) this.value = this.value.slice(0,4);
+});
+
+// 🔹 Check code function
+function checkCode(){
+    const input = codeInput.value.trim();
+    if(input.length !== 4){
+        document.getElementById("status").innerText = "Code must be 4 digits!";
+        return;
+    }
+    if(input === adminCode){
+        // Clear sensitive info
+        localStorage.setItem("isAdmin", "true");
+        // Remove code after successful login
+        localStorage.removeItem("adminCodeData");
+        window.location = "home.html";
+    } else{
+        document.getElementById("status").innerText = "Wrong code! Access denied.";
+    }
+}
+
+// 🔹 Initialize code on page load
+initCode();
+
+// Optional: prevent page back / caching
+window.history.forward();
+window.onunload=function(){};
+</script>
+
+</body>
+</html>

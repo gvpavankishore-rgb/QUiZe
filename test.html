@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Adaptive Assessment Test</title>
+
+<style>
+
+/* ===== Modern Soft Animated Background ===== */
+body{
+    margin:0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height:100vh;
+    overflow:hidden;
+    background: #f0f4ff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+/* Animated Gradient Blobs */
+body::before,
+body::after{
+    content:"";
+    position:absolute;
+    width:600px;
+    height:600px;
+    border-radius:50%;
+    filter: blur(120px);
+    z-index:0;
+    animation: move 12s infinite alternate ease-in-out;
+}
+body::before{ background:#667eea; top:-200px; left:-200px; }
+body::after{ background:#ff6ec4; bottom:-200px; right:-200px; }
+
+@keyframes move{
+    from{ transform:translateY(0px) translateX(0px); }
+    to{ transform:translateY(40px) translateX(40px); }
+}
+
+/* ===== Header ===== */
+.header{
+    position:absolute;
+    top:0;
+    width:100%;
+    background:white;
+    color:#333;
+    padding:18px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    z-index:2;
+}
+
+/* ===== Card Design ===== */
+.box{
+    position:relative;
+    z-index:1;
+    background:white;
+    padding:30px;
+    width:500px;
+    border-radius:20px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.15);
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+#studentInfo{ text-align:center; margin-bottom:15px; font-weight:bold; color:#333; }
+#timer{ text-align:center; font-weight:bold; font-size:18px; margin-bottom:15px; color:#667eea; }
+#qno{ color:#667eea; }
+.option{
+    padding:12px;
+    margin:10px 0;
+    border:1px solid #ddd;
+    border-radius:12px;
+    cursor:pointer;
+    transition:0.3s;
+}
+.option:hover{ background:#eef2ff; transform:translateX(5px); }
+.selected{ background:#667eea; color:white; border-color:#667eea; }
+
+button{
+    padding:12px 18px;
+    margin:10px 5px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.3s;
+}
+.submit{ background:#48bb78; color:white; }
+.next{ background:#667eea; color:white; }
+button:hover:not(:disabled){ transform:scale(1.05); }
+button:disabled{ background:gray; cursor:not-allowed; }
+
+#status{ margin-top:10px; font-weight:bold; }
+.submitted{ color:green; }
+
+@keyframes fadeIn{ from{opacity:0; transform:translateY(15px);} to{opacity:1; transform:translateY(0);} }
+
+</style>
+</head>
+
+<body>
+
+<div class="header">Adaptive Assessment Platform</div>
+
+<div class="box">
+    <div id="studentInfo"></div>
+    <div id="timer">Time Left: 15s</div>
+    <h3 id="qno"></h3>
+    <h2 id="question"></h2>
+    <div id="options"></div>
+    <button class="submit" onclick="submitAnswer()" id="submitBtn">Submit</button>
+    <button class="next" onclick="nextQuestion()" id="nextBtn" disabled>Next</button>
+    <div id="status"></div>
+</div>
+
+<script>
+
+// 🔒 Disable Right Click, Copy, Selection, Developer Tools
+document.addEventListener("contextmenu", e=> e.preventDefault());
+document.addEventListener("copy", e=> e.preventDefault());
+document.addEventListener("selectstart", e=> e.preventDefault());
+document.addEventListener("keydown", e=>{
+    if(e.ctrlKey && ["c","u","s","a","x"].includes(e.key)) e.preventDefault();
+    if(e.key === "F12") e.preventDefault();
+});
+
+// ===============================
+// STUDENT INFO
+// ===============================
+var studentName = localStorage.getItem("studentName");
+var rollNumber = localStorage.getItem("rollNumber");
+
+if(!studentName || !rollNumber){
+    alert("Please enter your details first!");
+    window.location = "index.html";
+}else{
+    document.getElementById("studentInfo").innerText =
+        `Name: ${studentName} | Roll No: ${rollNumber}`;
+}
+
+// ===============================
+// AI QUESTION GENERATOR
+// ===============================
+function generateAIQuestion(){
+
+    const topics = {
+        HTML:["tag","attribute","element","structure"],
+        CSS:["property","selector","flexbox","animation"],
+        JavaScript:["variable","function","array","loop"],
+        Python:["list","tuple","dictionary","function"],
+        Networking:["IP","DNS","protocol","router"],
+        OS:["kernel","process","thread","memory"]
+    };
+
+    const topicNames = Object.keys(topics);
+    const randomTopic = topicNames[Math.floor(Math.random()*topicNames.length)];
+    const conceptList = topics[randomTopic];
+    const correctConcept = conceptList[Math.floor(Math.random()*conceptList.length)];
+
+    let options = [correctConcept];
+    while(options.length < 4){
+        let randomT = topicNames[Math.floor(Math.random()*topicNames.length)];
+        let randomConcept = topics[randomT][Math.floor(Math.random()*topics[randomT].length)];
+        if(!options.includes(randomConcept)){
+            options.push(randomConcept);
+        }
+    }
+
+    options.sort(()=>0.5-Math.random());
+
+    return {
+        q: `Which concept belongs to ${randomTopic}?`,
+        options: options,
+        answer: correctConcept
+    };
+}
+
+// ===============================
+// QUIZ STATE LOAD / INIT
+// ===============================
+
+var totalQuestions = 10;
+
+var index = parseInt(localStorage.getItem("quiz_index"));
+var score = parseInt(localStorage.getItem("quiz_score"));
+var answers = JSON.parse(localStorage.getItem("quiz_answers"));
+var timeLeft = parseInt(localStorage.getItem("quiz_time"));
+var currentQuestion = JSON.parse(localStorage.getItem("quiz_current"));
+
+if(!currentQuestion){
+    index = 0;
+    score = 0;
+    answers = [];
+    timeLeft = 15;
+    currentQuestion = generateAIQuestion();
+    saveState();
+}
+
+var selected="";
+var submitted=false;
+var timer;
+
+// ===============================
+// SAVE STATE
+// ===============================
+function saveState(){
+    localStorage.setItem("quiz_index",index);
+    localStorage.setItem("quiz_score",score);
+    localStorage.setItem("quiz_answers",JSON.stringify(answers));
+    localStorage.setItem("quiz_time",timeLeft);
+    localStorage.setItem("quiz_current",JSON.stringify(currentQuestion));
+}
+
+// ===============================
+// AUTO SUBMIT FUNCTION
+// ===============================
+function autoSubmitAndExit(){
+
+    // Save current question as unanswered if not submitted
+    if(!submitted){
+        answers.push({
+            question: currentQuestion.q,
+            selected:"Not Attempted",
+            correct: currentQuestion.answer
+        });
+    }
+
+    localStorage.setItem("score",score);
+    localStorage.setItem("answers",JSON.stringify(answers));
+
+    // Clear quiz session
+    localStorage.removeItem("quiz_index");
+    localStorage.removeItem("quiz_score");
+    localStorage.removeItem("quiz_answers");
+    localStorage.removeItem("quiz_time");
+    localStorage.removeItem("quiz_current");
+
+    window.location = "index.html";
+}
+
+// ===============================
+// TIMER
+// ===============================
+function startTimer(){
+
+    document.getElementById("timer").innerText="Time Left: "+timeLeft+"s";
+
+    clearInterval(timer);
+
+    timer=setInterval(function(){
+        timeLeft--;
+        document.getElementById("timer").innerText="Time Left: "+timeLeft+"s";
+        saveState();
+
+        if(timeLeft<=0){
+            clearInterval(timer);
+            nextQuestion(true);
+        }
+    },1000);
+}
+
+// ===============================
+// LOAD QUESTION
+// ===============================
+function loadQuestion(){
+
+    submitted=false;
+    selected="";
+
+    document.getElementById("submitBtn").disabled=false;
+    document.getElementById("nextBtn").disabled=true;
+    document.getElementById("status").innerHTML="";
+
+    document.getElementById("qno").innerHTML=
+        `Question ${index+1} of ${totalQuestions}`;
+
+    document.getElementById("question").innerHTML=
+        `${index+1}. ${currentQuestion.q}`;
+
+    var html="";
+    currentQuestion.options.forEach(opt=>{
+        html+=`<div class='option' onclick='selectOption(this)'>${opt}</div>`;
+    });
+
+    document.getElementById("options").innerHTML=html;
+
+    startTimer();
+}
+
+// ===============================
+// OPTION SELECT
+// ===============================
+function selectOption(el){
+    if(submitted) return;
+
+    var all=document.getElementsByClassName("option");
+    for(var i=0;i<all.length;i++)
+        all[i].classList.remove("selected");
+
+    el.classList.add("selected");
+    selected=el.innerHTML;
+}
+
+// ===============================
+// SUBMIT
+// ===============================
+function submitAnswer(){
+
+    if(selected==""){
+        alert("Please select an option");
+        return;
+    }
+
+    clearInterval(timer);
+    submitted=true;
+
+    answers.push({
+        question: currentQuestion.q,
+        selected: selected,
+        correct: currentQuestion.answer
+    });
+
+    if(selected==currentQuestion.answer) score++;
+
+    saveState();
+
+    document.getElementById("status").innerHTML="Submitted ✓";
+    document.getElementById("submitBtn").disabled=true;
+    document.getElementById("nextBtn").disabled=false;
+}
+
+// ===============================
+// NEXT QUESTION
+// ===============================
+function nextQuestion(timeUp=false){
+
+    if(timeUp){
+        answers.push({
+            question: currentQuestion.q,
+            selected:"No Answer",
+            correct: currentQuestion.answer
+        });
+    }
+
+    index++;
+
+    if(index>=totalQuestions){
+
+        localStorage.setItem("score",score);
+        localStorage.setItem("answers",JSON.stringify(answers));
+
+        localStorage.removeItem("quiz_index");
+        localStorage.removeItem("quiz_score");
+        localStorage.removeItem("quiz_answers");
+        localStorage.removeItem("quiz_time");
+        localStorage.removeItem("quiz_current");
+
+        window.location="result.html";
+    }
+    else{
+        timeLeft=15;
+        currentQuestion = generateAIQuestion();
+        saveState();
+        loadQuestion();
+    }
+}
+
+// ===============================
+// BACK BUTTON DETECTION
+// ===============================
+window.addEventListener("popstate", function(){
+    autoSubmitAndExit();
+});
+
+// Push state to detect back
+history.pushState(null, null, location.href);
+
+// Start
+loadQuestion();
+
+// This adaptive assessment platform dynamically generates random technical questions from multiple topics. 
+// It tracks student performance in real-time and saves progress using browser localStorage for seamless continuation.
+
+</script>
+</body>
+</html>

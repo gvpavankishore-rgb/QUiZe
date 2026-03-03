@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Adaptive Assessment — Colorful Architecture + Rules</title>
+<style>
+:root{
+  --bg:#0b1220;
+  --card:#fff;
+  --accent:#4f63ff;
+  --muted:#6b7280;
+}
+html, body{
+  height:100%;
+  margin:0;
+  font-family:Inter,Segoe UI,Arial;
+  background:linear-gradient(135deg,#071029,#0b1220);
+  color:#0b1220;
+}
+.wrap{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px;
+  box-sizing:border-box;
+}
+.panel{
+  width:1000px;
+  max-width:calc(100% - 40px);
+  background:linear-gradient(180deg,#ffffff,#fbfdff);
+  border-radius:14px;
+  padding:20px;
+  box-shadow:0 30px 60px rgba(2,6,23,0.6);
+  display:grid;
+  grid-template-columns:360px 1fr;
+  gap:18px;
+}
+.left{
+  padding:18px;
+  border-radius:10px;
+  background:linear-gradient(180deg,#f6f8ff,#ffffff);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
+}
+h1{
+  margin:0 0 8px 0;
+  color:var(--accent);
+  font-size:20px;
+}
+p.desc{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+.step{
+  margin-top:12px;
+  padding:12px;
+  border-radius:10px;
+  background:#fff;
+  border-left:4px solid rgba(79,99,255,0.3);
+}
+.step strong{
+  display:block;
+  color:#0b1220;
+}
+.controls{
+  margin-top:14px;
+  display:flex;
+  gap:10px;
+}
+.btn{
+  padding:10px 12px;
+  border-radius:8px;
+  border:none;
+  background:var(--accent);
+  color:#fff;
+  cursor:pointer;
+  font-weight:600;
+}
+.btn.secondary{
+  background:#eef2ff;
+  color:var(--accent);
+  border:1px solid #e6e9ff;
+}
+.right{
+  padding:18px;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fff,#fbfdff);
+}
+.arch{
+  padding:12px;
+  border-radius:10px;
+  background:linear-gradient(90deg,#fdf6ff,#f0f8ff);
+  border:1px solid rgba(10,12,20,0.03);
+  box-shadow:0 4px 12px rgba(79,99,255,0.1);
+}
+svg{
+  width:100%;
+  height:280px;
+}
+.rules{
+  margin-top:16px;
+  padding:12px;
+  border-radius:10px;
+  background:#fff8f8;
+  border-left:4px solid #ff4d4d;
+}
+.rules h2{
+  margin:0 0 8px 0;
+  font-size:16px;
+  color:#ff4d4d;
+}
+.rules ul{
+  margin:0;
+  padding-left:18px;
+  color:#6b7280;
+  font-size:13px;
+}
+.rules ul li{
+  margin-bottom:6px;
+}
+.recycle{
+  margin-top:12px;
+  padding:12px;
+  border-radius:10px;
+  background:#fff8f0;
+  border:1px dashed rgba(79,99,255,0.06);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.graph{
+  margin-top:12px;
+  padding:12px;
+  border-radius:10px;
+  background:#ffffff;
+  border:1px solid rgba(10,12,20,0.03);
+}
+canvas{
+  width:100%;
+  height:220px;
+  border-radius:8px;
+  background:linear-gradient(180deg,#fbfdff,#ffffff);
+}
+@media (max-width:920px){
+  .panel{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="panel" role="main" aria-label="Simple architecture">
+
+<!-- LEFT PANEL -->
+<div class="left">
+<h1>Your Tech Stack</h1>
+<p class="desc">
+This architecture only includes what you used: 
+<strong>Frontend</strong> — HTML/CSS; 
+<strong>Backend</strong> — Python (Flask or your preferred framework); 
+Local question generator & storage.
+</p>
+
+<div class="step">
+<strong>Frontend (HTML/CSS)</strong>
+<p>UI, timer, option selection, saving progress to localStorage, fetch questions via <code>/api/generate-questions</code>.</p>
+</div>
+
+<div class="step">
+<strong>Backend (Python)</strong>
+<p>Flask server handles question generation, JSON API responses, validation, caching (optional).</p>
+</div>
+
+<div class="step">
+<strong>Local Storage / Persistence</strong>
+<p>Store scores and answers in localStorage; optional history storage in JSON or SQLite file.</p>
+</div>
+
+<div class="controls">
+<button class="btn" onclick="goIndex()">Next</button>
+<button class="btn secondary" onclick="downloadSVG()">Download Diagram</button>
+</div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right">
+<div class="arch" aria-hidden="false">
+<!-- SVG diagram (colorful) -->
+<svg viewBox="0 0 900 280" preserveAspectRatio="xMidYMid meet">
+<defs>
+<linearGradient id="gradFrontend" x1="0" x2="1">
+<stop offset="0" stop-color="#4f63ff"/>
+<stop offset="1" stop-color="#8bc6ff"/>
+</linearGradient>
+<linearGradient id="gradBackend" x1="0" x2="1">
+<stop offset="0" stop-color="#0f5132"/>
+<stop offset="1" stop-color="#2ecc71"/>
+</linearGradient>
+<linearGradient id="gradDB" x1="0" x2="1">
+<stop offset="0" stop-color="#ff9a3c"/>
+<stop offset="1" stop-color="#ffc93c"/>
+</linearGradient>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#4f63ff"></path>
+</marker>
+</defs>
+
+<!-- Frontend -->
+<rect x="20" y="30" rx="14" ry="14" width="240" height="80" fill="url(#gradFrontend)" stroke="#3b4bc0" stroke-width="2"/>
+<text x="140" y="58" text-anchor="middle" font-weight="700" fill="#fff">Frontend</text>
+<text x="140" y="78" text-anchor="middle" fill="#eef" font-size="12">HTML · CSS · Timer · localStorage</text>
+
+<!-- Backend -->
+<rect x="320" y="30" rx="14" ry="14" width="260" height="80" fill="url(#gradBackend)" stroke="#0b3d26" stroke-width="2"/>
+<text x="450" y="58" text-anchor="middle" font-weight="700" fill="#fff">Backend (Python)</text>
+<text x="450" y="78" text-anchor="middle" fill="#ddf" font-size="12">Flask · Local generator · JSON API</text>
+
+<!-- Local DB -->
+<rect x="640" y="30" rx="14" ry="14" width="220" height="80" fill="url(#gradDB)" stroke="#cc8c2a" stroke-width="2"/>
+<text x="750" y="58" text-anchor="middle" font-weight="700" fill="#fff">Local DB / File</text>
+<text x="750" y="78" text-anchor="middle" fill="#fff" font-size="12">SQLite or JSON file</text>
+
+<!-- Recycle / Revalidate -->
+<rect x="320" y="140" rx="14" ry="14" width="260" height="80" fill="#f0f7ff" stroke="#a0c4ff" stroke-width="2"/>
+<text x="450" y="170" text-anchor="middle" font-weight="700" fill="#1e3a8a">Recycle / Revalidate</text>
+<text x="450" y="190" text-anchor="middle" fill="#6b7280" font-size="11">Analytics → review → update bank</text>
+
+<!-- Arrows -->
+<g stroke="#4f63ff" stroke-width="3" fill="none" marker-end="url(#arrow)">
+<path d="M260,70 L320,70"/>
+<path d="M580,70 L640,70"/>
+<path d="M450,110 L450,140"/>
+<path d="M760,110 L760,140" stroke-dasharray="6 4"/>
+</g>
+</svg>
+</div>
+
+<!-- RULES & REGULATIONS -->
+<div class="rules">
+<h2>Rules & Regulations</h2>
+<ul>
+<li>Name field cannot contain numbers or special characters.</li>
+<li>You must select an option to submit each question.</li>
+<li>If timer runs out, the next question will automatically appear.</li>
+<li>Feedback will only be displayed at the end of the quiz.</li>
+</ul>
+</div>
+
+</div>
+</div>
+
+<script>
+function goIndex(){ window.location = "index.html"; }
+
+function downloadSVG(){
+const svg = document.querySelector('.arch svg');
+const s = new XMLSerializer().serializeToString(svg);
+const blob = new Blob([s], {type:'image/svg+xml'});
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a'); a.href = url; a.download = 'architecture.svg';
+document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
